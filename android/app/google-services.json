@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851452201382",
+    "project_id": "voucho-app",
+    "storage_bucket": "voucho-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851452201382:android:3c24f7bf2d1d37ae402767",
+        "android_client_info": {
+          "package_name": "com.example.voucho_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxRdn980_d52G4dxO3c26N08AQjwXGVuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
