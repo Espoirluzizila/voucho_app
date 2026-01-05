@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voucho_app/widgets/transaction_card.dart';
+import 'package:voucho/widgets/transaction_card.dart';
 
 
 class HistoryView extends StatelessWidget {

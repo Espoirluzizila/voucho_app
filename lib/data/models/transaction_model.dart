@@ -10,6 +10,11 @@ class TransactionModel {
   final String note;
   final DateTime date;
   final String status;
+  
+  // NOUVEAUX CHAMPS AJOUTÉS ICI
+  final String? photoUrl;
+  final bool hasPhoto;
+  final bool hasSignature;
 
   TransactionModel({
     required this.id,
@@ -21,25 +26,32 @@ class TransactionModel {
     required this.note,
     required this.date,
     required this.status,
+    this.photoUrl,
+    this.hasPhoto = false,
+    this.hasSignature = false,
   });
 
-  // --- C'EST CETTE PARTIE QUI MANQUE OU EST MAL ÉCRITE ---
   factory TransactionModel.fromMap(Map<String, dynamic> map, String documentId) {
     return TransactionModel(
       id: documentId,
       userId: map['userId'] ?? '',
       personName: map['personName'] ?? '',
-      // On s'assure que les nombres sont bien convertis en double
       amount: (map['amount'] ?? 0.0).toDouble(),
       remainingAmount: (map['remainingAmount'] ?? 0.0).toDouble(),
       type: map['type'] ?? 'loan',
       note: map['note'] ?? '',
-      // Gestion de la date Firestore (Timestamp vers DateTime)
-      date: (map['date'] as Timestamp).toDate(),
+      date: (map['date'] != null) 
+          ? (map['date'] as Timestamp).toDate() 
+          : DateTime.now(),
       status: map['status'] ?? 'active',
+      // MAPPING DES NOUVEAUX CHAMPS
+      photoUrl: map['photoUrl'],
+      hasPhoto: map['hasPhoto'] ?? false,
+      hasSignature: map['hasSignature'] ?? false,
     );
   }
 
+  // Optionnel : Ajoute une méthode toMap si tu dois enregistrer sur Firebase
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -50,6 +62,9 @@ class TransactionModel {
       'note': note,
       'date': date,
       'status': status,
+      'photoUrl': photoUrl,
+      'hasPhoto': hasPhoto,
+      'hasSignature': hasSignature,
     };
   }
 }

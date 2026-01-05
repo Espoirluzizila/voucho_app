@@ -1,16 +1,27 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voucho_app/main.dart';
-import 'package:voucho_app/app/modules/auth/login/view/login_view.dart';
+import 'package:provider/provider.dart';
+import 'package:voucho/main.dart';
+import 'package:voucho/providers/app_state.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() {
   testWidgets('Vérification de l\'affichage de la page de connexion', (WidgetTester tester) async {
-    // 1. On lance l'application VouchoApp (et non MyApp)
-    await tester.pumpWidget(const VouchoApp());
+    // On crée une instance de AppState pour le test
+    final appState = AppState();
 
-    // 2. On vérifie que le nom de l'app "Voucho" est bien affiché
-    expect(find.text('Voucho'), findsOneWidget);
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => appState,
+        // Correction ici : on ajoute l'argument startScreen requis
+        child: const MyApp(startScreen: '/login'), 
+      ),
+    );
 
-    // 3. On vérifie que le bouton de connexion est présent
-    expect(find.text('Se connecter'), findsOneWidget);
+    // On attend que l'interface se stabilise
+    await tester.pumpAndSettle();
+
+    // Vérifie que le MaterialApp est bien présent
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

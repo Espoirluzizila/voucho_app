@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:voucho_app/providers/app_state.dart';
+import 'package:voucho/providers/app_state.dart';
 
 class ContactsView extends StatelessWidget {
   const ContactsView({super.key});

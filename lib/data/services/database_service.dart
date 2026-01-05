@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voucho_app/data/models/transaction_model.dart'; // Vérifie bien ce chemin
+import 'package:voucho/data/models/transaction_model.dart'; // Vérifie bien ce chemin
 
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

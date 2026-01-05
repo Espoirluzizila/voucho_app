@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:voucho_app/data/models/transaction_model.dart';
+import 'package:voucho/data/models/transaction_model.dart';
 
 class TransactionDetailsView extends StatelessWidget {
   const TransactionDetailsView({super.key});

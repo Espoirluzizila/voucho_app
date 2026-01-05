@@ -1,214 +1,262 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voucho_app/providers/app_state.dart';
-import 'package:voucho_app/data/models/transaction_model.dart';
-import 'package:voucho_app/utils/colors.dart';
+import 'package:voucho/providers/app_state.dart';
+import 'package:voucho/data/models/transaction_model.dart'; 
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
+
+  // Fonction de confirmation pour supprimer les transactions
+  void _confirmReset(BuildContext context, AppState state) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1B3339),
+        title: const Text("Supprimer tout ?", style: TextStyle(color: Colors.white)),
+        content: const Text("Cette action effacera toutes vos transactions définitivement.", 
+          style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              state.resetAllTransactions();
+              Navigator.pop(context);
+            },
+            child: const Text("OUI, EFFACER"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<AppState>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background, // On utilise ta couleur de fond définie
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- HEADER ---
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Bonjour,", style: TextStyle(color: Colors.white54, fontSize: 16)),
-                      Text(state.currentUserName, 
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // --- CARTE DE SOLDE (SANS IMAGE DE FOND POUR ÉVITER L'ERREUR) ---
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  // On utilise un dégradé de couleurs au lieu d'une image assets
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, Color(0xFF006064)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
+      backgroundColor: const Color(0xFF0D1B1E),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/images/bg_home.jpg"), 
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                // --- HEADER : USERNAME & SETTINGS & CURRENCY ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Solde Net", style: TextStyle(color: Colors.white70)),
-                        GestureDetector(
-                          onTap: () => state.toggleCurrency(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Text(state.isUSD ? "USD" : "CDF", 
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start, 
+                        children: [
+                          const Text("Bonjour,", style: TextStyle(color: Colors.white70)),
+                          Text(
+                            state.currentUserName, 
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
                           ),
-                        ),
-                      ],
+                        ]
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      state.formatAmount(state.totalLoans - state.totalDebts),
-                      style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _balanceInfo("On me doit", state.formatAmount(state.totalLoans), Icons.arrow_downward, Colors.greenAccent),
-                        _balanceInfo("Je dois", state.formatAmount(state.totalDebts), Icons.arrow_upward, Colors.orangeAccent),
+                        IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.white70, size: 26),
+                          onPressed: () => Navigator.pushNamed(context, '/settings'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 28),
+                          onPressed: () => _confirmReset(context, state),
+                        ),
+                        const SizedBox(width: 5),
+                        _currencyBadge(state),
                       ],
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 25),
 
-              const SizedBox(height: 30),
+                // --- CARTE DE SOLDE PRINCIPALE ---
+                _buildBalanceCard(state),
+                const SizedBox(height: 30),
 
-              // --- OPÉRATIONS RÉCENTES ---
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Opérations récentes", 
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  TextButton(
-                    onPressed: () => _showUpdateTauxDialog(context, state),
-                    child: Text("Taux: ${state.tauxChange.toStringAsFixed(0)}", 
-                      style: const TextStyle(color: Colors.cyanAccent)),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('transactions')
-                      .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                      .orderBy('date', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final docs = snapshot.data?.docs ?? [];
-                    if (docs.isEmpty) {
-                      return const Center(child: Text("Aucune donnée", style: TextStyle(color: Colors.white54)));
-                    }
-
-                    return ListView.builder(
-                      itemCount: docs.length,
-                      itemBuilder: (context, i) {
-                        final data = docs[i].data() as Map<String, dynamic>;
-                        final t = TransactionModel.fromMap(data, docs[i].id);
-
-                        return Card(
-                          color: Colors.white.withOpacity(0.05),
-                          child: ListTile(
-                            onTap: () => Navigator.pushNamed(context, '/details', arguments: t),
-                            leading: Icon(
-                              t.type == 'loan' ? Icons.add_circle_outline : Icons.remove_circle_outline,
-                              color: t.type == 'loan' ? Colors.greenAccent : Colors.redAccent,
-                            ),
-                            title: Text(t.personName, style: const TextStyle(color: Colors.white)),
-                            subtitle: Text("Reste: ${state.formatAmount(t.remainingAmount)}", style: const TextStyle(color: Colors.white54)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
+                // --- LISTE DES TRANSACTIONS ---
+                _buildListHeader(context),
+                Expanded(child: _buildList(state)),
+              ],
+            ),
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFF40FFFF),
         onPressed: () => Navigator.pushNamed(context, '/add'),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.black, size: 35),
       ),
     );
   }
 
-  Widget _balanceInfo(String label, String value, IconData icon, Color color) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 16),
-        const SizedBox(width: 5),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  // --- WIDGET DU SÉLECTEUR DE DEVISE (CORRIGÉ) ---
+  Widget _currencyBadge(AppState state) {
+    return PopupMenuButton<String>(
+      onSelected: (String code) => state.setCurrency(code),
+      initialValue: state.currentCurrency,
+      color: const Color(0xFF1B3339), // Correction : color au lieu de backgroundColor
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white10, 
+          borderRadius: BorderRadius.circular(20), 
+          border: Border.all(color: Colors.white24)
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(
+              state.currentCurrency, 
+              style: const TextStyle(color: Color(0xFF40FFFF), fontWeight: FontWeight.bold)
+            ),
+            const Icon(Icons.arrow_drop_down, color: Colors.white54, size: 18),
           ],
         ),
-      ],
+      ),
+      itemBuilder: (context) => state.currencies.map((String c) {
+        return PopupMenuItem<String>(
+          value: c,
+          child: Row(
+            children: [
+              Icon(
+                Icons.monetization_on_outlined, 
+                color: state.currentCurrency == c ? const Color(0xFF40FFFF) : Colors.white54, 
+                size: 18
+              ),
+              const SizedBox(width: 10),
+              Text(c, style: const TextStyle(color: Colors.white)),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
-  void _showUpdateTauxDialog(BuildContext context, AppState state) {
-    final controller = TextEditingController(text: state.tauxChange.toStringAsFixed(0));
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1B3339),
-        title: const Text("Modifier le taux", style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(hintText: "Ex: 21200", hintStyle: TextStyle(color: Colors.white24)),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
-          ElevatedButton(
-            onPressed: () {
-              state.updateTaux(double.parse(controller.text));
-              Navigator.pop(context);
-            },
-            child: const Text("OK"),
-          ),
-        ],
+  Widget _buildBalanceCard(AppState state) {
+    double soldeGlobal = state.totalLoans - state.totalDebts;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF00ACC1), Color(0xFF007A8A)]),
+        borderRadius: BorderRadius.circular(25),
       ),
+      child: Column(children: [
+        const Text("Solde à recouvrer", style: TextStyle(color: Colors.white70)),
+        SizedBox(
+          height: 50,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              state.formatAmount(soldeGlobal), 
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+          Expanded(child: _miniCol("On me doit", state.formatAmount(state.totalLoans))),
+          Expanded(child: _miniCol("Je dois", state.formatAmount(state.totalDebts))),
+        ])
+      ]),
+    );
+  }
+
+  Widget _miniCol(String t, String v) => Column(children: [
+    Text(t, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+    FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+    ),
+  ]);
+
+  Widget _buildListHeader(BuildContext context) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      const Text("Dettes en cours", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+      TextButton(
+        onPressed: () => Navigator.pushNamed(context, '/contacts'), 
+        child: const Text("Mes Contacts", style: TextStyle(color: Color(0xFF40FFFF)))
+      ),
+    ]);
+  }
+
+  Widget _buildList(AppState state) {
+    if (state.activeTransactions.isEmpty) return const Center(child: Text("Aucune dette", style: TextStyle(color: Colors.white24)));
+    
+    return ListView.builder(
+      itemCount: state.activeTransactions.length,
+      itemBuilder: (context, i) {
+        final TransactionModel t = state.activeTransactions[i]; 
+        
+        return Card(
+          color: Colors.white.withOpacity(0.05),
+          margin: const EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: ListTile(
+            onTap: () => Navigator.pushNamed(context, '/details', arguments: t),
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: t.type == 'loan' ? Colors.greenAccent : Colors.redAccent, 
+                  width: 2
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: (t.photoUrl != null && t.photoUrl!.isNotEmpty) 
+                  ? Image.network(
+                      t.photoUrl!, 
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stack) => _iconFallback(t),
+                    ) 
+                  : _iconFallback(t),
+              ),
+            ),
+            title: Text(t.personName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Montant converti dynamiquement selon le choix de l'utilisateur
+                Text("Reste: ${state.formatAmount(t.remainingAmount)}", style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                
+                // Si ce n'est pas déjà du USD, on affiche un rappel en Dollars
+                if (state.currentCurrency != "USD") 
+                   Text("${t.remainingAmount.toStringAsFixed(2)} \$", style: const TextStyle(color: Colors.white24, fontSize: 10)),
+              ],
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _iconFallback(TransactionModel t) {
+    return Icon(
+      t.type == 'loan' ? Icons.arrow_downward : Icons.arrow_upward, 
+      color: t.type == 'loan' ? Colors.greenAccent : Colors.redAccent
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voucho_app/utils/colors.dart';// Importation relative plus robuste
+import 'package:voucho/utils/colors.dart';// Importation relative plus robuste
 
 class TextComponents {
   static TextStyle title = const TextStyle(

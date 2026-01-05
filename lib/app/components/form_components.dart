@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:voucho_app/app/components/button_components.dart';
-import 'package:voucho_app/utils/colors.dart';
+import 'package:voucho/app/components/button_components.dart';
+import 'package:voucho/utils/colors.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;

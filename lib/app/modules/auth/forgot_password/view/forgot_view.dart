@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../components/button_components.dart';
 import '../../../../components/form_components.dart';
 import '../../../../components/space.dart';
-import 'package:voucho_app/utils/colors.dart';
+import 'package:voucho/utils/colors.dart';
 
 class ForgotView extends StatelessWidget {
   ForgotView({super.key});

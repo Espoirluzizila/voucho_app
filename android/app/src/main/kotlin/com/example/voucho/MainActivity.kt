@@ -1,4 +1,4 @@
-package com.example.voucho_app
+package com.example.voucho
 
 import io.flutter.embedding.android.FlutterActivity
 

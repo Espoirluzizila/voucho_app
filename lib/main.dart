@@ -1,57 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// Importations des Providers
-import 'package:voucho_app/providers/app_state.dart';
-
-// Importations des Vues
-import 'app/modules/splash/view/splash_view.dart';
-import 'app/modules/auth/login/view/login_view.dart';
-import 'app/modules/home/view/home_view.dart';
-import 'package:voucho_app/app/modules/transactions/view/add_transaction_view.dart';
-import 'app/modules/details/view/transaction_details_view.dart';
-import 'package:voucho_app/app/modules/contact/view/contacts_view.dart';
-import 'package:voucho_app/app/modules/contact/view/contact_detail_view.dart'; // Assure-toi que ce fichier existe
+// Importations de tes dossiers (Vérifie bien que les chemins correspondent à ton projet)
+import 'package:voucho/providers/app_state.dart';
+import 'package:voucho/app/modules/home/view/home_view.dart';
+import 'package:voucho/app/modules/auth/login/view/login_view.dart'; 
+import 'package:voucho/app/modules/auth/register/view/register_view.dart';
+import 'package:voucho/app/modules/transactions/add/view/add_transaction_view.dart';
+import 'package:voucho/app/modules/transactions/detail/view/detail_view.dart';
+import 'package:voucho/app/modules/contact/view/contacts_view.dart';
+import 'package:voucho/app/modules/contact/view/contact_detail_view.dart';
+import 'package:voucho/settings/view/settings_view.dart';
 
 void main() async {
+  // 1. Initialisation de Flutter et Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
+  
+  // 2. Vérification immédiate : un utilisateur est-il déjà connecté ?
+  User? user = FirebaseAuth.instance.currentUser;
   
   runApp(
     ChangeNotifierProvider(
-      create: (context) => AppState()..init(),
-      child: const VouchoApp(),
+      create: (context) {
+        AppState state = AppState();
+        // Si l'utilisateur est déjà là, on charge ses dettes tout de suite
+        if (user != null) {
+          state.init(); 
+        }
+        return state;
+      },
+      // On passe l'écran de départ selon l'état de connexion
+      child: MyApp(startScreen: user == null ? '/login' : '/home'),
     ),
   );
 }
 
-class VouchoApp extends StatelessWidget {
-  const VouchoApp({super.key});
+class MyApp extends StatelessWidget {
+  final String startScreen;
+  const MyApp({super.key, required this.startScreen});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Voucho',
       debugShowCheckedModeBanner: false,
+      
+      // Thème sombre élégant pour ton app
       theme: ThemeData(
-        useMaterial3: true,
-        primarySwatch: Colors.blue,
-        fontFamily: 'Poppins',
+        brightness: Brightness.dark,
+        primarySwatch: Colors.cyan,
+        scaffoldBackgroundColor: const Color(0xFF0D1B1E),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0D1B1E),
+          elevation: 0,
+        ),
       ),
-      initialRoute: '/splash',
+
+      // Définition de la route initiale
+      initialRoute: startScreen, 
+
+      // Table des routes pour la navigation
       routes: {
-        '/splash': (context) => const SplashView(),
-        '/': (context) => LoginView(),
+        '/login': (context) => LoginView(),
+        '/register': (context) => RegisterView(),
         '/home': (context) => const HomeView(),
-        '/add_transaction': (context) => const AddTransactionView(),
-        '/details': (context) => const TransactionDetailsView(),
+        '/add': (context) => const AddTransactionView(),
+        '/details': (context) => const DetailsView(),
+        '/settings': (context) => const SettingsView(),
         '/contacts': (context) => const ContactsView(),
-        // Route dynamique pour voir l'historique d'un contact précis
         '/details_contact': (context) {
-           final name = ModalRoute.of(context)!.settings.arguments as String;
-           return ContactDetailView(contactName: name);
+          // Gestion sécurisée des arguments pour les détails de contact
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final String name = args is String ? args : "Inconnu";
+          return ContactDetailView(contactName: name);
         },
       },
     );
